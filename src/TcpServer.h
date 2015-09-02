@@ -37,17 +37,20 @@
 
 #pragma once
 
+#include <boost/asio/ip/udp.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/io_service.hpp>
 #include "ServerInterface.h"
 #include "TcpSession.h"
 
-typedef std::shared_ptr<asio::ip::tcp::acceptor>	TcpAcceptorRef;
+typedef std::shared_ptr<boost::asio::ip::tcp::acceptor>	TcpAcceptorRef;
 typedef std::shared_ptr<class TcpServer>			TcpServerRef;
 
 class TcpServer : public ServerInterface, public std::enable_shared_from_this<TcpServer>
 {
 public:
-	static TcpServerRef	create( asio::io_service& io );
-	~TcpServer();
+    static TcpServerRef	create( const std::shared_ptr<boost::asio::io_service>& io );
+	virtual ~TcpServer();
 	
 	template< typename T, typename Y >
 	inline void			connectAcceptEventHandler( T eventHandler, Y* eventHandlerObject )
@@ -68,9 +71,9 @@ public:
 
 	TcpAcceptorRef		getAcceptor() const;
 protected:
-	TcpServer( asio::io_service& io );
+    TcpServer( const std::shared_ptr<boost::asio::io_service>& io );
 
-	void				onAccept( TcpSessionRef session, const asio::error_code& err );
+    void				onAccept( TcpSessionRef session, const boost::system::error_code& err );
 	
 	TcpAcceptorRef		mAcceptor;
 	std::function<void( TcpSessionRef )>	mAcceptEventHandler;

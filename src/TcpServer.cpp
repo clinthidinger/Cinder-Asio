@@ -40,15 +40,15 @@
 #include "cinder/Utilities.h"
 
 using namespace ci;
-using namespace std;
-using asio::ip::tcp;
+//using namespace std;
+//using asio::ip::tcp;
 
-TcpServerRef TcpServer::create( asio::io_service& io )
+TcpServerRef TcpServer::create( const std::shared_ptr<boost::asio::io_service>& io )
 {
 	return TcpServerRef( new TcpServer( io ) )->shared_from_this();
 }
 
-TcpServer::TcpServer( asio::io_service& io )
+TcpServer::TcpServer( const std::shared_ptr<boost::asio::io_service>& io )
 	: ServerInterface( io ), mAcceptEventHandler( nullptr ), mCancelEventHandler( nullptr )
 {
 }
@@ -65,18 +65,18 @@ void TcpServer::accept( uint16_t port )
 	if ( mAcceptor ) {
 		mAcceptor.reset();
 	}
-	mAcceptor				= TcpAcceptorRef( new tcp::acceptor( mIoService, tcp::endpoint( tcp::v4(), port) ) );
+    mAcceptor				= TcpAcceptorRef( new boost::asio::ip::tcp::acceptor( *mIoService, boost::asio::ip::tcp::endpoint( boost::asio::ip::tcp::v4(), port) ) );
 	TcpSessionRef session	= TcpSession::create( mIoService );
 	
 	mAcceptor->async_accept( *session->mSocket, 
-		mStrand.wrap( boost::bind( &TcpServer::onAccept, shared_from_this(), 
-			session, asio::placeholders::error ) ) );
+		mStrand.wrap( std::bind( &TcpServer::onAccept, shared_from_this(),
+			session, std::placeholders::_1 ) ) );
 }
 
 void TcpServer::cancel()
 {
 	if ( mAcceptor ) {
-		asio::error_code err;
+        boost::system::error_code err;
 		mAcceptor->cancel( err );
 		if ( err ) {
 			if ( mErrorEventHandler != nullptr ) {
@@ -105,7 +105,7 @@ void TcpServer::connectCancelEventHandler( const std::function<void ()>& eventHa
 	mCancelEventHandler = eventHandler;
 }
 
-void TcpServer::onAccept( TcpSessionRef session, const asio::error_code& err )
+void TcpServer::onAccept( TcpSessionRef session, const boost::system::error_code& err )
 {
 	if ( err ) {
 		if ( mErrorEventHandler != nullptr ) {

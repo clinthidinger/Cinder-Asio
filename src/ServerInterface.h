@@ -37,6 +37,7 @@
 
 #pragma once
 
+#include <boost/asio/io_service.hpp>
 #include "DispatcherInterface.h"
 
 class ServerInterface : public DispatcherInterface
@@ -44,6 +45,6 @@ class ServerInterface : public DispatcherInterface
 public:
 	virtual void	accept( uint16_t port ) = 0;
 protected:
-	ServerInterface( asio::io_service& io );
+    ServerInterface( const std::shared_ptr<boost::asio::io_service>& io );
 };
 	

@@ -36,19 +36,18 @@
 */
 
 #include "TcpClient.h"
-
+#include <boost/asio/basic_socket.hpp>
 #include "cinder/Utilities.h"
 
 using namespace ci;
-using namespace std;
-using asio::ip::tcp;
+//using asio::ip::tcp;
 
-TcpClientRef TcpClient::create( asio::io_service& io )
+TcpClientRef TcpClient::create( const std::shared_ptr<boost::asio::io_service>& io )
 {
 	return TcpClientRef( new TcpClient( io ) )->shared_from_this();
 }
 
-TcpClient::TcpClient( asio::io_service& io )
+TcpClient::TcpClient( const std::shared_ptr<boost::asio::io_service>& io )
 	: ClientInterface( io ), mConnectEventHandler( nullptr )
 {
 }
@@ -58,18 +57,18 @@ TcpClient::~TcpClient()
 	mConnectEventHandler = nullptr;
 }
 
-void TcpClient::connect( const string& host, uint16_t port )
+void TcpClient::connect( const std::string& host, uint16_t port )
 {
 	connect( host, toString( port ) );
 }
 
-void TcpClient::connect( const string& host, const string& protocol )
+void TcpClient::connect( const std::string& host, const std::string& protocol )
 {
-	tcp::resolver::query query( host, protocol );
-	mResolver = TcpResolverRef( new tcp::resolver( mStrand.get_io_service() ) );
+	boost::asio::ip::tcp::resolver::query query( host, protocol );
+	mResolver = TcpResolverRef( new boost::asio::ip::tcp::resolver( mStrand.get_io_service() ) );
 	mResolver->async_resolve( query, 
-		mStrand.wrap( boost::bind( &TcpClient::onResolve, shared_from_this(), 
-		asio::placeholders::error, asio::placeholders::iterator ) ) );
+		mStrand.wrap( std::bind( &TcpClient::onResolve, shared_from_this(),
+                                  std::placeholders::_1, std::placeholders::_2 ) ) );
 }
 
 TcpResolverRef TcpClient::getResolver() const
@@ -77,7 +76,7 @@ TcpResolverRef TcpClient::getResolver() const
 	return mResolver;
 }
 
-void TcpClient::onConnect( TcpSessionRef session, const asio::error_code& err )
+void TcpClient::onConnect( TcpSessionRef session, const boost::system::error_code& err )
 {
 	if ( err ) {
 		if ( mErrorEventHandler != nullptr ) {
@@ -90,9 +89,10 @@ void TcpClient::onConnect( TcpSessionRef session, const asio::error_code& err )
 	}
 }
 
-void TcpClient::onResolve( const asio::error_code& err,
-						  tcp::resolver::iterator iter )
+void TcpClient::onResolve( const boost::system::error_code& err,
+						   boost::asio::ip::tcp::resolver::iterator iter )
 {
+    //* !!!
 	if ( err ) {
 		if ( mErrorEventHandler != nullptr ) {
 			mErrorEventHandler( err.message(), 0 );
@@ -102,10 +102,11 @@ void TcpClient::onResolve( const asio::error_code& err,
 			mResolveEventHandler();
 		}
 		TcpSessionRef session( new TcpSession( mIoService ) );
-		asio::async_connect( *session->mSocket, iter, 
-							 mStrand.wrap( boost::bind( &TcpClient::onConnect, 
-							 shared_from_this(), session, asio::placeholders::error ) ) );
+        auto w =  mStrand.wrap( std::bind( &TcpClient::onConnect,
+                                          shared_from_this(), session, std::placeholders::_1 ) );
+        boost::asio::async_connect( *session->mSocket, iter, w );
 	}
+     //*/
 }
 
 void TcpClient::connectConnectEventHandler( const std::function<void( TcpSessionRef )>& eventHandler )

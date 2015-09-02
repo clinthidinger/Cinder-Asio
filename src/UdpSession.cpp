@@ -38,18 +38,18 @@
 #include "UdpSession.h"
 
 using namespace ci;
-using namespace std;
-using asio::ip::udp;
+//using namespace std;
+//using boost::asio::ip::udp;
 
-UdpSessionRef UdpSession::create( asio::io_service& io )
+UdpSessionRef UdpSession::create( const std::shared_ptr<boost::asio::io_service>& io )
 {
 	return UdpSessionRef( new UdpSession( io ) )->shared_from_this();
 }
 
-UdpSession::UdpSession( asio::io_service& io )
+UdpSession::UdpSession( const std::shared_ptr<boost::asio::io_service>& io )
 	: SessionInterface( io )
 {
-	mSocket = UdpSocketRef( new udp::socket( io ) );
+    mSocket = UdpSocketRef( new boost::asio::ip::udp::socket( *io ) );
 }
 
 UdpSession::~UdpSession()
@@ -65,33 +65,33 @@ void UdpSession::read( size_t bufferSize )
 {
 	mBufferSize = bufferSize;
 	mSocket->async_receive_from( mResponse.prepare( bufferSize ), mEndpointRemote,
-		mStrand.wrap( boost::bind( &UdpSession::onRead, shared_from_this(), 
-			asio::placeholders::error, 
-			asio::placeholders::bytes_transferred ) ) );
+		mStrand.wrap( std::bind( &UdpSession::onRead, shared_from_this(),
+			std::placeholders::_1,
+			std::placeholders::_2 ) ) );
 }
 
 void UdpSession::write( const BufferRef& buffer )
 {
-	ostream stream( &mRequest );
+    std::ostream stream( &mRequest );
 	if ( buffer && buffer->getSize() > 0 ) {
 		stream.write( (const char*)buffer->getData(), buffer->getSize() );
 	}
 	mSocket->async_send( mRequest.data(), 
-		mStrand.wrap( boost::bind( &UdpSession::onWrite, shared_from_this(), 
-			asio::placeholders::error, 
-			asio::placeholders::bytes_transferred ) ) );
-	mSocket->set_option( asio::socket_base::broadcast( true ) );
+		mStrand.wrap( std::bind( &UdpSession::onWrite, shared_from_this(),
+			std::placeholders::_1,
+			std::placeholders::_2 ) ) );
+	mSocket->set_option( boost::asio::socket_base::broadcast( true ) );
 	mEndpointLocal = mSocket->local_endpoint();
 	mRequest.consume( mRequest.size() );
 }
 
 
-const asio::ip::udp::endpoint& UdpSession::getLocalEndpoint() const
+const boost::asio::ip::udp::endpoint& UdpSession::getLocalEndpoint() const
 {
 	return mEndpointLocal;
 }
 
-const asio::ip::udp::endpoint& UdpSession::getRemoteEndpoint() const
+const boost::asio::ip::udp::endpoint& UdpSession::getRemoteEndpoint() const
 {
 	return mEndpointRemote;
 }

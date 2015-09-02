@@ -38,6 +38,7 @@
 #pragma once
 
 #include "DispatcherInterface.h"
+#include <boost/asio/deadline_timer.hpp>
 
 typedef std::shared_ptr<class WaitTimer> WaitTimerRef;
 
@@ -59,7 +60,7 @@ public:
 protected:
 	WaitTimer( asio::io_service& io );
 
-	asio::deadline_timer	mTimer;
+    boost::asio::deadline_timer	mTimer;
 	size_t					mTimerInterval;
 	bool					mTimerRepeat;
 

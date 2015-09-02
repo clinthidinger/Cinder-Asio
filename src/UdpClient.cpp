@@ -40,15 +40,15 @@
 #include "cinder/Utilities.h"
 
 using namespace ci;
-using namespace std;
-using asio::ip::udp;
+//using namespace std;
+//using boost::asio::ip::udp;
 
-UdpClientRef UdpClient::create( asio::io_service& io )
+UdpClientRef UdpClient::create( const std::shared_ptr<boost::asio::io_service>& io )
 {
 	return UdpClientRef( new UdpClient( io ) )->shared_from_this();
 }
 
-UdpClient::UdpClient( asio::io_service& io )
+UdpClient::UdpClient( const std::shared_ptr<boost::asio::io_service>& io )
 	: ClientInterface( io ), mConnectEventHandler( nullptr )
 {
 }
@@ -58,18 +58,18 @@ UdpClient::~UdpClient()
 	mConnectEventHandler = nullptr;
 }
 
-void UdpClient::connect( const string& host, uint16_t port )
+void UdpClient::connect( const std::string& host, uint16_t port )
 {
 	connect( host, toString( port ) );
 }
 
-void UdpClient::connect( const string& host, const string& protocol )
+void UdpClient::connect( const std::string& host, const std::string& protocol )
 {
-	udp::resolver::query query( host, protocol );
-	mResolver = UdpResolverRef( new udp::resolver( mStrand.get_io_service() ) );
-	mResolver->async_resolve( query, 
-		mStrand.wrap( boost::bind( &UdpClient::onResolve, shared_from_this(), 
-			asio::placeholders::error, asio::placeholders::iterator ) ) );
+	boost::asio::ip::udp::resolver::query query( host, protocol );
+	mResolver = UdpResolverRef( new boost::asio::ip::udp::resolver( mStrand.get_io_service() ) );
+    auto w = mStrand.wrap( std::bind( &UdpClient::onResolve, shared_from_this(),
+                                     std::placeholders::_1, std::placeholders::_2 ) );
+	mResolver->async_resolve( query, w );
 }
 
 UdpResolverRef UdpClient::getResolver() const
@@ -77,7 +77,7 @@ UdpResolverRef UdpClient::getResolver() const
 	return mResolver;
 }
 
-void UdpClient::onConnect( UdpSessionRef session, const asio::error_code& err )
+void UdpClient::onConnect( UdpSessionRef session, const boost::system::error_code& err )
 {
 	if ( err ) {
 		if ( mErrorEventHandler != nullptr ) {
@@ -85,15 +85,16 @@ void UdpClient::onConnect( UdpSessionRef session, const asio::error_code& err )
 		}
 	} else {
 		if ( mConnectEventHandler != nullptr ) {
-			session->mSocket->set_option( asio::socket_base::reuse_address( true ) );
+            session->mSocket->set_option( boost::asio::socket_base::reuse_address( true ) );
 			mConnectEventHandler( session );
 		}
 	}
 }
 
-void UdpClient::onResolve( const asio::error_code& err,
-						  udp::resolver::iterator iter )
+void UdpClient::onResolve( const boost::system::error_code& err,
+						  boost::asio::ip::udp::resolver::iterator iter )
 {
+    //* !!!
 	if ( err ) {
 		if ( mErrorEventHandler != nullptr ) {
 			mErrorEventHandler( err.message(), 0 );
@@ -103,9 +104,10 @@ void UdpClient::onResolve( const asio::error_code& err,
 			mResolveEventHandler();
 		}
 		UdpSessionRef session = UdpSession::create( mIoService );
-		asio::async_connect( *session->mSocket, iter, mStrand.wrap( boost::bind( &UdpClient::onConnect, 
-			shared_from_this(), session, asio::placeholders::error ) ) );
+        boost::asio::async_connect( *session->mSocket, iter, mStrand.wrap( std::bind( &UdpClient::onConnect,
+			shared_from_this(), session, std::placeholders::_1 ) ) );
 	}
+     //*/
 }
 
 void UdpClient::connectConnectEventHandler( const std::function< void( UdpSessionRef ) >& eventHandler )

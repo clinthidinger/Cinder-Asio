@@ -37,7 +37,7 @@
 
 #include "ServerInterface.h"
 
-ServerInterface::ServerInterface( asio::io_service& io )
+ServerInterface::ServerInterface( const std::shared_ptr<boost::asio::io_service>& io )
 	: DispatcherInterface( io )
 {
 }

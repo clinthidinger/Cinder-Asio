@@ -39,9 +39,12 @@
 
 #include "CinderAsio.h"
 
+
 #include "boost/bind.hpp"
 #include <string>
 #include <functional>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/strand.hpp>
 
 class DispatcherInterface
 {
@@ -55,10 +58,10 @@ public:
 	}
 	void				connectErrorEventHandler( const std::function<void( std::string, size_t )>& eventHandler );
 protected:
-	DispatcherInterface( asio::io_service& io );
+    DispatcherInterface( const std::shared_ptr<boost::asio::io_service>& io );
 
-	asio::io_service&	mIoService;
-	asio::strand		mStrand;
+    std::shared_ptr<boost::asio::io_service> mIoService;
+    boost::asio::strand		mStrand;
 
 	std::function<void( std::string, size_t )>	mErrorEventHandler;
 };

@@ -41,13 +41,13 @@
 #include "UdpSession.h"
 
 typedef std::shared_ptr<class UdpClient>			UdpClientRef;
-typedef std::shared_ptr<asio::ip::udp::resolver>	UdpResolverRef;
+typedef std::shared_ptr<boost::asio::ip::udp::resolver>	UdpResolverRef;
 
 class UdpClient : public ClientInterface, public std::enable_shared_from_this<UdpClient>
 {
 public:
-	static UdpClientRef	create( asio::io_service& io );
-	~UdpClient();
+	static UdpClientRef	create( const std::shared_ptr<boost::asio::io_service>& io );
+	virtual ~UdpClient();
 
 	virtual void	connect( const std::string& host, uint16_t port );
 	virtual void	connect( const std::string& host, const std::string& protocol );
@@ -62,10 +62,10 @@ public:
 	
 	UdpResolverRef	getResolver() const;
 protected:
-	UdpClient( asio::io_service& io );
+	UdpClient( const std::shared_ptr<boost::asio::io_service>& io );
 	
-	virtual void	onConnect( UdpSessionRef session, const asio::error_code& err );
-	virtual void	onResolve( const asio::error_code& err, asio::ip::udp::resolver::iterator iter );
+    virtual void	onConnect( UdpSessionRef session, const boost::system::error_code& err );
+    virtual void	onResolve( const boost::system::error_code& err, boost::asio::ip::udp::resolver::iterator iter );
 
 	UdpResolverRef	mResolver;
 

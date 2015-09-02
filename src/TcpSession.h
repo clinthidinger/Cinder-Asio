@@ -37,10 +37,12 @@
 
 #pragma once
 
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include "SessionInterface.h"
 
 typedef std::shared_ptr<class TcpSession>		TcpSessionRef;
-typedef std::shared_ptr<asio::ip::tcp::socket>	TcpSocketRef;
+typedef std::shared_ptr<boost::asio::ip::tcp::socket>	TcpSocketRef;
 
 class TcpClient;
 class TcpServer;
@@ -48,8 +50,8 @@ class TcpServer;
 class TcpSession : public SessionInterface, public std::enable_shared_from_this<TcpSession>
 {
 public:
-	static TcpSessionRef	create( asio::io_service& io );
-	~TcpSession();
+    static TcpSessionRef	create( const std::shared_ptr<boost::asio::io_service>& io );
+	virtual ~TcpSession();
 	
 	void					close();
 	
@@ -68,9 +70,9 @@ public:
 	}
 	void					connectCloseEventHandler( const std::function<void ()>& eventHandler );
 protected:
-	TcpSession( asio::io_service& io );
+    TcpSession( const std::shared_ptr<boost::asio::io_service>& io );
 
-	virtual void			onClose( const asio::error_code& err );
+    virtual void			onClose( const boost::system::error_code& err );
 
 	TcpSocketRef			mSocket;
 

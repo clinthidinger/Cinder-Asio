@@ -72,14 +72,14 @@ public:
 	}
 	void					connectWriteEventHandler( const std::function<void( size_t )>& eventHandler );
 protected:
-	SessionInterface( asio::io_service& io );
+	SessionInterface( const std::shared_ptr<boost::asio::io_service>& io );
 
-	virtual void			onRead( const asio::error_code& err, size_t bytesTransferred );
-	virtual void			onWrite( const asio::error_code& err, size_t bytesTransferred );
+    virtual void			onRead( const boost::system::error_code& err, size_t bytesTransferred );
+	virtual void			onWrite( const boost::system::error_code& err, size_t bytesTransferred );
 	
 	size_t					mBufferSize;
-	asio::streambuf			mRequest;
-	asio::streambuf			mResponse;
+    boost::asio::streambuf			mRequest;
+    boost::asio::streambuf			mResponse;
 	
 	std::function<void ()>					mReadCompleteEventHandler;
 	std::function<void( ci::BufferRef )>	mReadEventHandler;

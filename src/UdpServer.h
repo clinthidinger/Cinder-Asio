@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/asio/io_service.hpp>
 #include "ServerInterface.h"
 #include "UdpSession.h"
 
@@ -8,7 +9,7 @@ typedef std::shared_ptr<class UdpServer> UdpServerRef;
 class UdpServer : public ServerInterface, public std::enable_shared_from_this<UdpServer>
 {
 public:
-	static UdpServerRef create( asio::io_service& io );
+	static UdpServerRef create( const std::shared_ptr<boost::asio::io_service>& io );
 	~UdpServer();
 
 	template< typename T, typename Y >
@@ -20,7 +21,7 @@ public:
 	
 	virtual void		accept( uint16_t port );
 protected:
-	UdpServer( asio::io_service& io );
+	UdpServer( const std::shared_ptr<boost::asio::io_service>& io );
 
 	std::function<void( UdpSessionRef )>	mAcceptEventHandler;
 };

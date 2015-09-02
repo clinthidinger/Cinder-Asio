@@ -37,12 +37,13 @@
 
 #pragma once
 
+#include <boost/asio/io_service.hpp>
 #include "DispatcherInterface.h"
 
 class ClientInterface : public DispatcherInterface
 {
 public:
-	~ClientInterface();
+	virtual ~ClientInterface();
 
 	virtual void		connect( const std::string& host, uint16_t port ) = 0;
 	virtual void		connect( const std::string& host, const std::string& protocol ) = 0;
@@ -56,7 +57,7 @@ public:
 	void				connectResolveEventHandler( const std::function<void ()>& eventHandler );
 
 protected:
-	ClientInterface( asio::io_service& io );
+    ClientInterface( const std::shared_ptr<boost::asio::io_service>& io );
 	
 	std::function<void ()>	mResolveEventHandler;
 };
